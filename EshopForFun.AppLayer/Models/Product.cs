@@ -1,4 +1,4 @@
-﻿namespace EshopForFun.Models
+﻿namespace EshopForFun.AppLayer.Models
 {
     public class Product
     {
