@@ -1,4 +1,4 @@
-﻿namespace EshopForFun.Models.Response
+﻿namespace EshopForFun.Models.ResponseModels
 {
     public record CategoryResponse
     (

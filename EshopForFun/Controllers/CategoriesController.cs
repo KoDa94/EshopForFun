@@ -1,21 +1,20 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using EshopForFun.Models.Response;
-using EshopForFun.Data;
+﻿using Microsoft.AspNetCore.Mvc;
 using EshopForFun.Models.RequestModels;
 using EshopForFun.Models.ResponseModels;
+using EshopForFun.AppLayer.Data;
+using EshopForFun.AppLayer.Services;
 
 namespace EshopForFun.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CategoriesController : ControllerBase
+    public class CategoriesController(ICategoryService categoryService) : ControllerBase 
     {
         [HttpGet]
         public IActionResult GetAllCategories() //TASK: vrátí všechny kategorie
         {
-            var categories = PseudoDb.Categories.
-                Select(c => new CategoryResponse
+            var categories = categoryService.GetAllCategories()
+                .Select(c => new CategoryResponse
                 (
                     c.UniqueCategoryString,
                     c.Name,
@@ -28,8 +27,8 @@ namespace EshopForFun.Controllers
         [HttpGet("{code}")] //TASK: Vrátí danou kategorii s názvem a popisem
         public IActionResult GetCategory([FromRoute]string code)
         {
-            var category = PseudoDb.Categories.
-                FirstOrDefault(cat => cat.UniqueCategoryString == code);
+            var category = categoryService.GetCategoryByCode(code);
+
             if (category is null)
             {
                 return NotFound(new ErrorResponse
@@ -45,12 +44,11 @@ namespace EshopForFun.Controllers
                 category.Description
             ));
         }
-
-        [HttpGet("{code}/articles")] //TASK: Vrátí všechny produkty ze zadané kategorie
-        public IActionResult GetProductArticlesFromCategory([FromRoute] string code)
+        
+        [HttpGet("{code}/products")] //TASK: Vrátí všechny produkty ze zadané kategorie
+        public IActionResult GetProductsForCategory([FromRoute] string code)
         {
-            var category = PseudoDb.Categories
-                .FirstOrDefault(cat => cat.UniqueCategoryString == code);
+            var category = categoryService.GetCategoryByCode(code);
 
             if (category is null)
             {
@@ -61,8 +59,7 @@ namespace EshopForFun.Controllers
                 ));
             }
 
-            var products = PseudoDb.Products
-                .Where(pro => pro.CategoryId == category?.CategoryId)
+            var products = categoryService.GetProductsByCategoryCode(code)
                 .Select(p => new ProductResponse
                 (
                     p.UniqueProductString,
@@ -75,35 +72,28 @@ namespace EshopForFun.Controllers
             return Ok(products);
         }
 
-        
         [HttpPost] //TASK: zakládá novou kategorii 
         public IActionResult CreateCategory([FromBody]CreateCategoryRequest request)
         {
-            if (request.Name is null || request.Description is null)
-            {
-                return BadRequest("Tak tam snad něco napíšeš, ne?");
-            }
+            var newCategory = categoryService.CreateCategory(request.Name, request.Description);
 
-            if (PseudoDb.Categories
-                    .Any(c => c.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase)))
+            if (newCategory is null)
             {
                 ModelState.AddModelError(
-                    "name",
-                    $"Kategorie s názvem {request.Name} již existuje"
+                    string.Empty,
+                    $"Nevalidní data pro založení kategorie"
                 );
 
                 return ValidationProblem(ModelState);
             }
-
-            var newCategory = PseudoDb.AddCategory(request.Name, request.Description);
-
+            
             var response = new CategoryResponse(
                 newCategory.UniqueCategoryString,
                 newCategory.Name,
                 newCategory.Description
             );
 
-            return Created($"api/categories/",response);
+            return Created($"api/categories/{newCategory.UniqueCategoryString}", response);
         }
         
     }
