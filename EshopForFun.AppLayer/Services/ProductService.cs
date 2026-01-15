@@ -14,5 +14,17 @@ namespace EshopForFun.AppLayer.Services
         {
             return PseudoDb.Products.FirstOrDefault(pro => pro.UniqueProductString == code);
         }
+
+        public Product? CreateProduct(string name, string description, decimal price, string categoryCode)
+        {
+            if (PseudoDb.Categories.Any(cat => cat.UniqueCategoryString == categoryCode))
+            {
+                var newProduct = PseudoDb.AddProduct(name, description, price, categoryCode);
+
+                return newProduct;
+            }
+
+            return null;
+        }
     }
 }

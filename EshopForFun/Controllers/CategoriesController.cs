@@ -71,7 +71,7 @@ namespace EshopForFun.Controllers
             
             return Ok(products);
         }
-
+        
         [HttpPost] //TASK: zakládá novou kategorii 
         public IActionResult CreateCategory([FromBody]CreateCategoryRequest request)
         {

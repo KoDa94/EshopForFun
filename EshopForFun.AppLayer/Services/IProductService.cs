@@ -10,5 +10,6 @@ namespace EshopForFun.AppLayer.Services
     public interface IProductService
     {
         public Product? GetProductByCode(string code);
+        public Product? CreateProduct(string name, string description, decimal price, string categoryCode);
     }
 }
