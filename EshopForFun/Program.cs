@@ -1,5 +1,5 @@
 using EshopForFun.AppLayer;
-using EshopForFun.AppLayer.Services;
+using EshopForFun.Infrastructure;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Services.RegisterAppLayer();
+builder.Services.RegisterInfrastructureLayer();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

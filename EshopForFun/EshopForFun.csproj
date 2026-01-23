@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EshopForFun.AppLayer\EshopForFun.AppLayer.csproj" />
+    <ProjectReference Include="..\EshopForFun.Infrastructure\EshopForFun.InfrastructureLayer.csproj" />
   </ItemGroup>
 
 </Project>
