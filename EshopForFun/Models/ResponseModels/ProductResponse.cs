@@ -2,10 +2,10 @@
 {
     public record ProductResponse
     (
-        string Code,
-        string Name,
-        string Description,
-        decimal Price
+        string? ProductCode,
+        string? Name,
+        string? Description,
+        decimal? Price
     );
 
     

@@ -1,4 +1,5 @@
 ﻿using EshopForFun.AppLayer.Models;
+using EshopForFun.AppLayer.Services.Results;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,9 +11,11 @@ namespace EshopForFun.AppLayer.Services
     public interface ICategoryService
     {
         public List<Category> GetAllCategories();
-        public Category? GetCategoryByCode(string code);
+        public GetCategoryResponse GetCategoryByCode(string categoryCode);
 
-        public List<Product> GetProductsByCategoryCode(string categoryCode);
-        public Category? CreateCategory(string name, string description);
+        public List<Product> GetProductsForCategory(Category Category);
+        public CreateCategoryResponse CreateCategory(string name, string description);
+
+        public DeleteCategoryResponse DeleteCategory(string categoryCode);
     }
 }

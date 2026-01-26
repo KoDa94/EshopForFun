@@ -3,63 +3,76 @@ using EshopForFun.Models.RequestModels;
 using EshopForFun.Models.ResponseModels;
 using EshopForFun.AppLayer.Data;
 using EshopForFun.AppLayer.Services;
+using EshopForFun.AppLayer.Services.Results;
 
 namespace EshopForFun.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CategoriesController(ICategoryService categoryService) : ControllerBase 
+    public class CategoriesController(ICategoryService categoryService) : ControllerBase
     {
         [HttpGet]
         public IActionResult GetAllCategories() //TASK: vrátí všechny kategorie
         {
             var categories = categoryService.GetAllCategories()
-                .Select(c => new CategoryResponse
+                .Select(cat => new CategoryResponse
                 (
-                    c.UniqueCategoryString,
-                    c.Name,
-                    c.Description
+                    cat.UniqueCategoryString,
+                    cat.Name,
+                    cat.Description
                 )).ToList();
 
             return Ok(categories);
         }
 
-        [HttpGet("{code}")] //TASK: Vrátí danou kategorii s názvem a popisem
-        public IActionResult GetCategory([FromRoute]string code)
+        [HttpGet("{categoryCode}")] //TASK: Vrátí danou kategorii s názvem a popisem
+        public IActionResult GetCategory([FromRoute] string categoryCode)
         {
-            var category = categoryService.GetCategoryByCode(code);
+            var getCategoryResult = categoryService.GetCategoryByCode(categoryCode);
 
-            if (category is null)
+            return getCategoryResult.Result switch
             {
-                return NotFound(new ErrorResponse
+                
+                GetCategoryResult.InvalidCode => BadRequest(new ErrorResponse
                 (
-                    $"Kategorie s kódem {code} neexistuje",
-                    $"{code} => CATEGORY_NOT_FOUND"
-                ));
-            }
-            return Ok(new CategoryResponse
-            (
-                category.UniqueCategoryString,
-                category.Name,
-                category.Description
-            ));
+                    getCategoryResult.Message!,
+                    $"{categoryCode} => INVALID_PRODUCT_CODE"
+                )),
+                
+                GetCategoryResult.NotFound => NotFound(new ErrorResponse
+                (
+                    getCategoryResult.Message!,
+                    $"{categoryCode} => ARTICLE_NOT_FOUND"
+                )),
+
+                GetCategoryResult.Success => Ok(new CategoryResponse
+                (
+                    getCategoryResult.Category!.UniqueCategoryString,
+                    getCategoryResult.Category.Name,
+                    getCategoryResult.Category.Description
+    
+                )),
+
+                _ => StatusCode(500)
+            };
+
         }
-        
-        [HttpGet("{code}/products")] //TASK: Vrátí všechny produkty ze zadané kategorie
-        public IActionResult GetProductsForCategory([FromRoute] string code)
-        {
-            var category = categoryService.GetCategoryByCode(code);
 
-            if (category is null)
+        [HttpGet("{categoryCode}/products")] //TASK: Vrátí všechny produkty ze zadané kategorie
+        public IActionResult GetProductsForCategory([FromRoute] string categoryCode)
+        {
+            var category = categoryService.GetCategoryByCode(categoryCode);
+
+            if (category.Result == GetCategoryResult.NotFound)
             {
                 return NotFound(new ErrorResponse
                 (
-                    $"Kategorie s kódem {code} neexistuje",
-                    $"{code} => CATEGORY_NOT_FOUND"
+                    $"Kategorie s kódem {categoryCode} neexistuje",
+                    $"{categoryCode} => CATEGORY_NOT_FOUND"
                 ));
             }
 
-            var products = categoryService.GetProductsByCategoryCode(code)
+            var products = categoryService.GetProductsForCategory(category.Category!)
                 .Select(p => new ProductResponse
                 (
                     p.UniqueProductString,
@@ -68,32 +81,53 @@ namespace EshopForFun.Controllers
                     p.Price
                 ))
                 .ToList();
-            
+
             return Ok(products);
         }
 
         [HttpPost] //TASK: zakládá novou kategorii 
-        public IActionResult CreateCategory([FromBody]CreateCategoryRequest request)
+        public IActionResult CreateCategory([FromBody] CreateCategoryRequest request)
         {
-            var newCategory = categoryService.CreateCategory(request.Name, request.Description);
+            var createCategoryResult = categoryService.CreateCategory(request.Name, request.Description);
 
-            if (newCategory is null)
+            return createCategoryResult.Result switch
             {
-                ModelState.AddModelError(
-                    string.Empty,
-                    $"Nevalidní data pro založení kategorie"
-                );
+                CreateCategoryResult.Success => Created($"{createCategoryResult.Message}", new CategoryResponse
+                (
+                    createCategoryResult.Category!.UniqueCategoryString,
+                    createCategoryResult.Category.Name,
+                    createCategoryResult.Category.Description
+                )),
 
-                return ValidationProblem(ModelState);
-            }
-            
-            var response = new CategoryResponse(
-                newCategory.UniqueCategoryString,
-                newCategory.Name,
-                newCategory.Description
-            );
+                CreateCategoryResult.ConflictCategoryWithSameName => Conflict(new ErrorResponse
+                (
+                    createCategoryResult.Message!,
+                    $"{request.Name} => CONFLICT_CATEGORY_WITH_SAME_NAME"
+                )),
+                _ => StatusCode(500)
+            };
+        }
 
-            return Created($"api/categories/{newCategory.UniqueCategoryString}", response);
+        [HttpDelete("{categoryCode}")] //TASK: smaže kategorii
+        public IActionResult DeleteCategory([FromRoute] string categoryCode)
+        {
+            var deleteCategoryResult = categoryService.DeleteCategory(categoryCode);
+
+            return deleteCategoryResult.Result switch
+            {
+                DeleteCategoryResult.Deleted => NoContent(),
+                DeleteCategoryResult.NotFound => NotFound(new ErrorResponse
+                (
+                    $"{deleteCategoryResult.Message}",
+                    $"{categoryCode} => NOT_FOUND"
+                )),
+                DeleteCategoryResult.HasProducts => Conflict(new ErrorResponse
+                (
+                    $"{deleteCategoryResult.Message}",
+                    $"{categoryCode} => HAS_PRODUCTS"
+                )),
+                _ => StatusCode(500)
+            };
         }
         
     }

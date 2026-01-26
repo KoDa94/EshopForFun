@@ -2,8 +2,8 @@
 {
     public record CategoryResponse
     (
-        string Code,
-        string Name,
-        string Description
+        string? Code,
+        string? Name,
+        string? Description
     );
 }

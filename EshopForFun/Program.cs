@@ -1,5 +1,5 @@
 using EshopForFun.AppLayer;
-using EshopForFun.AppLayer.Services;
+using EshopForFun.Infrastructure;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,8 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Services.RegisterAppLayer();
+builder.Services.RegisterInfrastructureLayer();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddEndpointsApiExplorer();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

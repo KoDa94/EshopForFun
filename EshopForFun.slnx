@@ -3,5 +3,6 @@
     <File Path="Directory.Build.props" />
   </Folder>
   <Project Path="EshopForFun.AppLayer/EshopForFun.AppLayer.csproj" Id="ddd49f01-d6e8-4f33-8ea6-37fad42a743d" />
+  <Project Path="EshopForFun.Infrastructure/EshopForFun.InfrastructureLayer.csproj" Id="b8622c07-41a5-4d0b-ace1-dfe58415c986" />
   <Project Path="EshopForFun/EshopForFun.csproj" />
 </Solution>

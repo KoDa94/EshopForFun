@@ -1,14 +1,18 @@
 ﻿using EshopForFun.AppLayer.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using EshopForFun.AppLayer.Services.Results;
 
 namespace EshopForFun.AppLayer.Services
 {
     public interface IProductService
     {
-        public Product? GetProductByCode(string code);
+        GetProductResponse GetProduct(string? productCode);
+
+        CreateProductResponse CreateProduct(string name, string description, decimal price, string categoryCode);
+
+        GetProductResponse FullUpdateProduct(string productCode, string name, string description, decimal price);
+
+        DeleteProductResponse DeleteProduct(string productCode);
+
+        PatchProductResponse PatchProduct(string productCode, string? productName, string? productDescription, decimal? productPrice);
     }
 }
