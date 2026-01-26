@@ -7,6 +7,7 @@ using EshopForFun.Models.RequestModels;
 using EshopForFun.Models.ResponseModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EshopForFun.Controllers
@@ -30,7 +31,7 @@ namespace EshopForFun.Controllers
                 GetProductResult.NotFound => NotFound(new ErrorResponse
                 (
                     getProductResult.Message!,
-                    $"{productCode} => ARTICLE_NOT_FOUND"
+                    $"{productCode} => PRODUCT_NOT_FOUND"
                 )),
 
                 GetProductResult.Success =>
@@ -94,23 +95,84 @@ namespace EshopForFun.Controllers
             };
         }
 
-        [HttpPatch("{productCode}")]
-        public IActionResult PatchProduct([FromRoute] string productCode, [FromBody] PatchProductRequest request)
-        {
-            var patchProductResult = productService.PatchProduct(productCode, request.Name, request.Description, request.Price);
-       
+        [HttpPatch("{productCode}", Name = "PatchProduct")]
+        [Consumes("application/json-patch+json")]
+        public IActionResult PatchProduct([FromRoute] string productCode, [FromBody] JsonPatchDocument<PatchProductRequest> patchDoc)
+        { 
+            string[] allowedPaths = ["/name", "/description", "/price"];
+
+            if (patchDoc == null)
+            {
+                return BadRequest(new ErrorResponse(
+                        $"Patch dokument nenalezen",
+                        $"PATCH_DOC => MISSING"
+                    ));
+            }
+
+            if (patchDoc.Operations.Any(op => !string.Equals(op.op, "replace", StringComparison.OrdinalIgnoreCase)))
+            {
+                return BadRequest(new ErrorResponse(
+                    "Pouze operace 'replace' je povolena",
+                    "PATCH_OP_NOT_ALLOWED"
+                ));
+            }
+
+            var invalidPath = patchDoc.Operations.Select(op => op.path).FirstOrDefault(path => string.IsNullOrWhiteSpace(path) || !allowedPaths.Contains(path));
+
+            if (invalidPath != null)
+            {
+                return BadRequest(new ErrorResponse(
+                        $"Cesta '{invalidPath}' je nepovolena",
+                        $"PATCH_PATH_NOT_ALLOWED"
+                    ));
+            }
+
+            var product = productService.GetProduct(productCode);
+
+            if (product.Result == GetProductResult.NotFound)
+            {
+                return NotFound(new ErrorResponse
+                (
+                    product.Message!,
+                    $"{productCode} => PRODUCT_NOT_FOUND"
+                ));
+            }
+
+            var productToPatch = new PatchProductRequest
+            {
+                Name = product.Product?.Name,
+                Description = product.Product?.Description,
+                Price = product.Product?.Price, 
+            };
+
+            patchDoc.ApplyTo(productToPatch, ModelState);
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            TryValidateModel(productToPatch);
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var patchProductResult = productService.PatchProduct(productCode, productToPatch.Name, productToPatch.Description, productToPatch.Price);
+
             return patchProductResult.Result switch
             {
-                GetProductResult.Success => Ok(new ProductResponse(
-                    patchProductResult.Product!.UniqueProductString,
-                    patchProductResult.Product.Name,
-                    patchProductResult.Product.Description,
-                    patchProductResult.Product.Price
+                PatchProductResult.PartialUpdated => Ok(new ProductResponse(
+                    product.Product!.UniqueProductString,
+                    productToPatch.Name,
+                    productToPatch.Description,
+                    productToPatch.Price
                 )),
-                GetProductResult.NotFound => NotFound(new ErrorResponse
+                PatchProductResult.NegativePrice => Conflict(new ErrorResponse
                 (
-                    $"Produkt nebyl nalezen",
-                    $"{productCode} => NOT_FOUND"
+                    $"{patchProductResult.Message}",
+                    $"NEGATIVE_PRODUCT_PRICE"
                 )),
                 _ => StatusCode(500)
             };

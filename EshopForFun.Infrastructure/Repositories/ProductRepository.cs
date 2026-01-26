@@ -26,7 +26,7 @@ namespace EshopForFun.Infrastructure.Repositories
             return PseudoDb.UpdateProduct(productCode, name, description, price);
         }
 
-        public Product? PatchProduct(string productCode, string? name, string? description, decimal? price)
+        public bool PatchProduct(string productCode, string? name, string? description, decimal? price)
         {
             return PseudoDb.PatchProduct(productCode, name, description, price);
         }

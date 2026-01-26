@@ -19,7 +19,7 @@ namespace EshopForFun.AppLayer.Repositories
 
         public Product? UpdateProduct(string productCode, string name, string description, decimal price);
 
-        public Product? PatchProduct(string productCode, string? name, string? description, decimal? price);
+        public bool PatchProduct(string productCode, string? name, string? description, decimal? price);
 
         public bool DeleteProduct(string productCode);
     }

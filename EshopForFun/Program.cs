@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.RegisterAppLayer();
 builder.Services.RegisterInfrastructureLayer();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddEndpointsApiExplorer();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

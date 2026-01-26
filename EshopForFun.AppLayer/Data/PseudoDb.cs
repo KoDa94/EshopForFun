@@ -173,7 +173,7 @@ namespace EshopForFun.AppLayer.Data
             return null;
         }
 
-        public static Product? PatchProduct(string productCode, string? name, string? description, decimal? price)
+        public static bool PatchProduct(string productCode, string? name, string? description, decimal? price)
         {
             foreach (var category in Categories)
             {
@@ -191,15 +191,15 @@ namespace EshopForFun.AppLayer.Data
                     product.Description = description;
                 }
 
-                if (price is not null)
+                if (price.HasValue)
                 {
                     product.Price = price.Value;
                 }
 
-                return product;
+                return true;
             }
 
-            return null;
+            return false;
         }
     }
 }

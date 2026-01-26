@@ -53,21 +53,19 @@ namespace EshopForFun.AppLayer.Services
             return new(GetProductResult.Success, product, "Produkt byl kompletně aktualizován");
         }
         
-        public GetProductResponse PatchProduct(string productCode, string? name, string? description, decimal? price)
+        public PatchProductResponse PatchProduct(string productCode, string? productName, string? productDescription, decimal? productPrice)
         {
-            if (string.IsNullOrEmpty(productCode))
+            if (productPrice < 0)
             {
-                return new(GetProductResult.InvalidCode, null, "Neplatný produktový kód");
+                return new PatchProductResponse(PatchProductResult.NegativePrice, "Cena produktu nesmí být záporná");
             }
 
-            var product = productRepository.PatchProduct(productCode, name, description, price);
-
-            if (product is null)
+            if (productRepository.PatchProduct(productCode, productName, productDescription, productPrice))
             {
-                return new(GetProductResult.NotFound, null, "Produkt, jehož hodnoty chcete změnit neexistuje");
+                return new PatchProductResponse(PatchProductResult.PartialUpdated, "Produkt byl úspěšně aktualizován");
             }
 
-            return new(GetProductResult.Success, product, "Produkt byl aktualizován o zadané hodnoty");
+            return new PatchProductResponse(PatchProductResult.Error, "Nečekaná chyba, jsem kokot");
         }
        
         public DeleteProductResponse DeleteProduct(string productCode)
